@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Dr Anwar Siddiqui</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h2>🩺 Advanced Electrohomeopathy</h2>
+
+    <div class="caseForm">
+      <!-- I. Patient Information -->
+      <h3>I. Patient Information</h3>
+      <!-- <input id="patientName" placeholder="Patient Name" required /> -->
+      <input
+        id="patientName"
+        placeholder="Patient Name"
+        list="patientNames"
+        required
+      />
+      <datalist id="patientNames"></datalist>
+
+      <input id="age" placeholder="Age" />
+      <input id="gender" placeholder="Gender" />
+      <input id="phone" placeholder="Phone" />
+      <input id="address" placeholder="Address" />
+
+      <!-- II. Chief Complaint -->
+      <h3>II. Chief Complaint & Symptoms</h3>
+      <textarea id="chiefComplaint" placeholder="Chief Complaint"></textarea>
+      <input id="duration" placeholder="Duration" />
+      <textarea id="pqrs" placeholder="PQRS Description"></textarea>
+
+      <!-- III. Causation & Modalities -->
+      <h3>III. Causation & Modalities</h3>
+      <textarea id="causation" placeholder="Causation & Onset"></textarea>
+      <textarea id="aggravation" placeholder="Aggravating Factors"></textarea>
+      <textarea id="amelioration" placeholder="Ameliorating Factors"></textarea>
+      <textarea id="timeModalities" placeholder="Time Modalities"></textarea>
+
+      <!-- IV. Physical Generals -->
+      <h3>IV. Physical Generals</h3>
+      <input id="hunger" placeholder="Hunger" />
+      <input id="appetite" placeholder="Appetite" />
+      <input id="thirst" placeholder="Thirst" />
+      <input id="desires" placeholder="Food / Drink Desires" />
+      <input id="aversions" placeholder="Aversions" />
+      <input id="sleep" placeholder="Sleep Pattern" />
+      <input id="dreams" placeholder="Dreams" />
+
+      <!-- V. Thermal -->
+      <h3>V. Thermal State</h3>
+      <input id="thermal" placeholder="Heat / Cold Sensitivity" />
+
+      <!-- VI. Eliminations -->
+      <h3>VI. Eliminations</h3>
+      <textarea id="perspiration" placeholder="Perspiration"></textarea>
+      <textarea id="urine" placeholder="Urine"></textarea>
+      <textarea id="stool" placeholder="Stool"></textarea>
+
+      <!-- VII. Mental Generals -->
+      <h3>VII. Mental Generals</h3>
+      <textarea id="mental" placeholder="Mental & Emotional State"></textarea>
+
+      <!-- VIII. Medical History -->
+      <h3>VIII. Medical History</h3>
+      <textarea
+        id="medicalHistory"
+        placeholder="Past / Surgical / Drug History"
+      ></textarea>
+      <textarea id="allergies" placeholder="Allergies"></textarea>
+
+      <!-- IX. Family History -->
+      <h3>IX. Family History</h3>
+      <textarea
+        id="familyHistory"
+        placeholder="Family History & Miasmatic Background"
+      ></textarea>
+
+      <!-- X. Provisional -->
+      <h3>X. Provisional Assessment</h3>
+      <textarea
+        id="provisional"
+        placeholder="Provisional Diagnosis / Remedy / Plan"
+      ></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button onclick="copyCase()">📋 COPY CASE</button>
+      <button class="secondary" onclick="clearForm()">🧹 CLEAR</button>
+    </div>
+
+    <hr />
+
+    <h3>Diagnosis & Treatment</h3>
+    <div>
+      <textarea id="diagnosis" placeholder="Diagnosis"></textarea>
+      <textarea id="treatment" placeholder="Treatment"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button id="saveBtn" onclick="saveCase()">💾 SAVE CASE</button>
+      <button class="secondary" onclick="clearForm()">🧹 CLEAR</button>
+    </div>
+
+    <hr />
+    <h3>Search Old Cases</h3>
+    <div class="searchArea">
+      <input id="search" placeholder="Name or Phone" list="searchNames" />
+      <datalist id="searchNames"></datalist>
+      <div id="searchStatus" class="status"></div>
+    </div>
+
+    <div id="cases"></div>
+
+    <script src="script.js"></script>
+
+    <div id="toast" class="toast"></div>
+  </body>
+</html>
