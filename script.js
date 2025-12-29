@@ -421,7 +421,11 @@ let searchTimer;
 search.onkeyup = () => {
   clearTimeout(searchTimer);
 
-  const q = normalizeName(search.value);
+  // const q = normalizeName(search.value);
+  const rawQ = search.value.trim();
+  const q = normalizeName(rawQ);
+  const qPhone = rawQ.replace(/\D/g, "");
+
   if (!q) {
     cases.innerHTML = "";
     searchStatus.innerText = "";
@@ -435,14 +439,32 @@ search.onkeyup = () => {
     const ends = [];
     const contains = [];
 
+    // CASES_ARRAY.forEach((r) => {
+    //   const name = normalizeName(r.name);
+
+    //   if (name === q) {
+    //     exact.push(r);
+    //   } else if (name.endsWith(q)) {
+    //     ends.push(r);
+    //   } else if (name.includes(q)) {
+    //     contains.push(r);
+    //   }
+    // });
+
     CASES_ARRAY.forEach((r) => {
       const name = normalizeName(r.name);
+      const phone = (r.phone || "").replace(/\D/g, "");
 
-      if (name === q) {
+      // ✅ Exact name OR exact phone
+      if (name === q || (qPhone && phone === qPhone)) {
         exact.push(r);
-      } else if (name.endsWith(q)) {
+      }
+      // ✅ Partial phone match
+      else if (qPhone && phone.includes(qPhone)) {
         ends.push(r);
-      } else if (name.includes(q)) {
+      }
+      // ✅ Partial name match
+      else if (name.includes(q)) {
         contains.push(r);
       }
     });
