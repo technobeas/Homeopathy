@@ -2,7 +2,7 @@
 // 🔐 CONFIG
 // ===============================
 const API =
-  "https://script.google.com/macros/s/AKfycbxcfiI-L4yH-oMenDr0j5D4r-Vlz3CEdkbh_o-_1nm6udJwQ_ERH3HyPQzeHXuUxtckVg/exec";
+  "https://script.google.com/macros/s/AKfycbzdvoH3o05N7Exhwth8GEHbbvuPx1PGWCU-edvAj-Rkm-n0TeCeTkrojE5thS2geH7zIg/exec";
 
 // MUST match Script Properties → SECRET_TOKEN
 const AUTH_TOKEN = "MY_SECRET_KEY_123";
@@ -24,6 +24,12 @@ const cases = document.getElementById("cases");
 const searchStatus = document.getElementById("searchStatus");
 const toast = document.getElementById("toast");
 const saveBtn = document.getElementById("saveBtn");
+const chiefComplaint = document.getElementById("chiefComplaint");
+const duration = document.getElementById("duration");
+const pqrs = document.getElementById("pqrs");
+const medicalHistory = document.getElementById("medicalHistory");
+const allergies = document.getElementById("allergies");
+const familyHistory = document.getElementById("familyHistory");
 
 // ===============================
 // 🧠 GLOBAL CASES CACHE
@@ -84,12 +90,6 @@ function line(label, value) {
   return `${label}: ${value}\n`;
 }
 
-// function showToast(message, type = "info", duration = 2500) {
-//   toast.innerText = message;
-//   toast.className = `toast show ${type}`;
-//   setTimeout(() => (toast.className = "toast"), duration);
-// }
-
 function showToast(message, type = "info", duration = 2500) {
   if (!toast) return;
 
@@ -124,6 +124,12 @@ function persistPatientInfo() {
   localStorage.setItem("case_gender", gender.value);
   localStorage.setItem("case_phone", phone.value);
   localStorage.setItem("case_address", address.value);
+}
+
+function fillIfEmpty(el, value) {
+  if (!el.value || !el.value.trim()) {
+    el.value = value || "";
+  }
 }
 
 // ===============================
@@ -265,6 +271,16 @@ async function saveCase() {
       gender: gender.value,
       phone: phone.value,
       address: address.value,
+
+      // ✅ ADDED (new separate columns)
+      chiefComplaint: chiefComplaint.value,
+      duration: duration.value,
+      pqrs: pqrs.value,
+      medicalHistory: medicalHistory.value,
+      allergies: allergies.value,
+      familyHistory: familyHistory.value,
+
+      // ✅ KEPT (unchanged)
       caseText: buildCaseText(),
       diagnosis: diagnosis.value,
       treatment: treatment.value,
@@ -367,10 +383,16 @@ patientName.addEventListener("input", () => {
 
   // ✅ Exact match → fill ONCE
   if (lastAutoFilledName !== name) {
-    age.value = r.age || "";
-    gender.value = r.gender || "";
-    phone.value = r.phone || "";
-    address.value = r.address || "";
+    fillIfEmpty(age, r.age);
+    fillIfEmpty(gender, r.gender);
+    fillIfEmpty(phone, r.phone);
+    fillIfEmpty(address, r.address);
+    fillIfEmpty(chiefComplaint, r.chiefComplaint);
+    fillIfEmpty(duration, r.duration);
+    fillIfEmpty(pqrs, r.pqrs);
+    fillIfEmpty(medicalHistory, r.medicalHistory);
+    fillIfEmpty(allergies, r.allergies);
+    fillIfEmpty(familyHistory, r.familyHistory);
 
     showToast("Patient details loaded", "info");
     lastAutoFilledName = name;
@@ -404,11 +426,16 @@ function restorePatientFromName() {
 
   const r = matches[0];
 
-  age.value = r.age || "";
-  gender.value = r.gender || "";
-  phone.value = r.phone || "";
-  address.value = r.address || "";
-
+  fillIfEmpty(age, r.age);
+  fillIfEmpty(gender, r.gender);
+  fillIfEmpty(phone, r.phone);
+  fillIfEmpty(address, r.address);
+  fillIfEmpty(chiefComplaint, r.chiefComplaint);
+  fillIfEmpty(duration, r.duration);
+  fillIfEmpty(pqrs, r.pqrs);
+  fillIfEmpty(medicalHistory, r.medicalHistory);
+  fillIfEmpty(allergies, r.allergies);
+  fillIfEmpty(familyHistory, r.familyHistory);
   lastAutoFilledName = name;
   disablePatientName();
 }
@@ -438,19 +465,6 @@ search.onkeyup = () => {
     const exact = [];
     const ends = [];
     const contains = [];
-
-    // CASES_ARRAY.forEach((r) => {
-    //   const name = normalizeName(r.name);
-
-    //   if (name === q) {
-    //     exact.push(r);
-    //   } else if (name.endsWith(q)) {
-    //     ends.push(r);
-    //   } else if (name.includes(q)) {
-    //     contains.push(r);
-    //   }
-    // });
-
     CASES_ARRAY.forEach((r) => {
       const name = normalizeName(r.name);
       const phone = (r.phone || "").replace(/\D/g, "");
@@ -563,11 +577,16 @@ function toggleVisit(header) {
 // ===============================
 function openCase(r) {
   patientName.value = r.name || "";
-  age.value = r.age || "";
-  gender.value = r.gender || "";
-  phone.value = r.phone || "";
-  address.value = r.address || "";
-
+  fillIfEmpty(age, r.age);
+  fillIfEmpty(gender, r.gender);
+  fillIfEmpty(phone, r.phone);
+  fillIfEmpty(address, r.address);
+  fillIfEmpty(chiefComplaint, r.chiefComplaint);
+  fillIfEmpty(duration, r.duration);
+  fillIfEmpty(pqrs, r.pqrs);
+  fillIfEmpty(medicalHistory, r.medicalHistory);
+  fillIfEmpty(allergies, r.allergies);
+  fillIfEmpty(familyHistory, r.familyHistory);
   diagnosis.value = "";
   treatment.value = "";
 
@@ -586,9 +605,13 @@ function openCase(r) {
 fields.forEach((id) => {
   const el = document.getElementById(id);
   if (!el) return;
-  el.addEventListener("input", () =>
-    localStorage.setItem("case_" + id, el.value)
-  );
+
+  el.addEventListener("input", (e) => {
+    // ✅ Only save REAL user typing, not autofill / restore
+    if (!e.isTrusted) return;
+
+    localStorage.setItem("case_" + id, el.value);
+  });
 });
 
 window.addEventListener("load", async () => {
