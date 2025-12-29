@@ -358,7 +358,6 @@ pre {
   padding: 8px;
 }
 
-
 .visit-body::-webkit-scrollbar {
   width: 6px;
 }
@@ -366,4 +365,48 @@ pre {
 .visit-body::-webkit-scrollbar-thumb {
   background: #c7d6ff;
   border-radius: 10px;
+}
+
+textarea {
+  min-height: 100px;
+  max-height: 220px; /* 👈 limit height */
+  resize: vertical;
+  overflow-y: auto; /* 👈 enable internal scroll */
+}
+
+textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background: #c7d6ff;
+  border-radius: 10px;
+}
+
+textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+input,
+textarea,
+select {
+  outline: none;
+}
+button:active {
+  background: var(--primary-dark);
+  box-shadow: none;
+}
+.card,
+.visit-header,
+button {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.disabled-field {
+  background: #f2f2f2;
+  color: #666;
+  cursor: not-allowed;
 }
