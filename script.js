@@ -118,6 +118,14 @@ function clearPatientInfo() {
   address.value = "";
 }
 
+function persistPatientInfo() {
+  localStorage.setItem("case_patientName", patientName.value);
+  localStorage.setItem("case_age", age.value);
+  localStorage.setItem("case_gender", gender.value);
+  localStorage.setItem("case_phone", phone.value);
+  localStorage.setItem("case_address", address.value);
+}
+
 // ===============================
 // 🧾 BUILD CASE TEXT
 // ===============================
@@ -382,6 +390,29 @@ patientName.addEventListener("blur", () => {
   }
 });
 
+function restorePatientFromName() {
+  if (!CASES_LOADED) return;
+
+  const name = normalizeName(patientName.value);
+  if (!name) return;
+
+  const matches = CASES_ARRAY.filter(
+    (r) => normalizeName(r.name) === name
+  ).sort((a, b) => new Date(b.lastVisit) - new Date(a.lastVisit));
+
+  if (!matches.length) return;
+
+  const r = matches[0];
+
+  age.value = r.age || "";
+  gender.value = r.gender || "";
+  phone.value = r.phone || "";
+  address.value = r.address || "";
+
+  lastAutoFilledName = name;
+  disablePatientName();
+}
+
 // ===============================
 // 🔎 SEARCH CASES (FULL UI)
 // ===============================
@@ -517,7 +548,13 @@ function openCase(r) {
 
   diagnosis.value = "";
   treatment.value = "";
+
+  lastAutoFilledName = normalizeName(r.name);
   disablePatientName();
+
+  // 🔥 persist immediately (no input event happens)
+  persistPatientInfo();
+
   showToast("Patient loaded. Add new visit & save.", "info");
 }
 
@@ -541,6 +578,9 @@ window.addEventListener("load", async () => {
 
   await loadPatientNames();
   loadSearchNames();
+
+  // 🔥 restore patient details if name exists
+  restorePatientFromName();
 });
 
 // ===============================
@@ -556,4 +596,15 @@ function clearForm() {
   lastAutoFilledName = null;
   enablePatientName();
   showToast("Form cleared", "info");
+}
+
+function clearTreatmentForm() {
+  diagnosis.value = "";
+  treatment.value = "";
+
+  // 🔥 remove from localStorage as well
+  localStorage.removeItem("case_diagnosis");
+  localStorage.removeItem("case_treatment");
+
+  showToast("Treatment cleared", "info");
 }
