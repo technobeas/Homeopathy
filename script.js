@@ -1,8 +1,10 @@
 // ===============================
 // 🔐 CONFIG
 // ===============================
-const API =
-  "https://script.google.com/macros/s/AKfycbzdvoH3o05N7Exhwth8GEHbbvuPx1PGWCU-edvAj-Rkm-n0TeCeTkrojE5thS2geH7zIg/exec";
+// const API =
+//   "https://script.google.com/macros/s/AKfycbzdvoH3o05N7Exhwth8GEHbbvuPx1PGWCU-edvAj-Rkm-n0TeCeTkrojE5thS2geH7zIg/exec";
+
+const API ="https://script.google.com/macros/s/AKfycbxAHiQokiifDoO73V9-weXxhvtS5rqWv3hA6N42IPlvrAx8EUbup8gJ6jEBaHbuqiZ6/exec";
 
 // MUST match Script Properties → SECRET_TOKEN
 const AUTH_TOKEN = "MY_SECRET_KEY_123";
@@ -659,3 +661,4 @@ function clearTreatmentForm() {
 
   showToast("Treatment cleared", "info");
 }
+
