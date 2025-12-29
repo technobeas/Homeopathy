@@ -116,6 +116,12 @@ function clearPatientInfo() {
   gender.value = "";
   phone.value = "";
   address.value = "";
+  chiefComplaint.value = "";
+  duration.value = "";
+  pqrs.value = "";
+  medicalHistory.value = "";
+  allergies.value = "";
+  familyHistory.value = "";
 }
 
 function persistPatientInfo() {
