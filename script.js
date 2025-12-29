@@ -1,23 +1,40 @@
+// ===============================
+// 🔐 CONFIG
+// ===============================
 const API =
-  "https://script.google.com/macros/s/AKfycbyFJOj7CxTEOf9LD7nMn73bPqGsVOW5-JWVlEa_eSyrB_ykvDSJpH8JYFBqKUUlfRdmMQ/exec";
+  "https://script.google.com/macros/s/AKfycbxcfiI-L4yH-oMenDr0j5D4r-Vlz3CEdkbh_o-_1nm6udJwQ_ERH3HyPQzeHXuUxtckVg/exec";
 
-const API_KEY = "MY_SECRET_KEY_123";
+// MUST match Script Properties → SECRET_TOKEN
+const AUTH_TOKEN = "MY_SECRET_KEY_123";
 
+// ===============================
+// 📌 DOM ELEMENTS
+// ===============================
 const patientName = document.getElementById("patientName");
 const age = document.getElementById("age");
 const gender = document.getElementById("gender");
 const phone = document.getElementById("phone");
 const address = document.getElementById("address");
 
-/* =========================
-   GLOBAL CASES CACHE (IN-MEMORY)
-========================= */
+const diagnosis = document.getElementById("diagnosis");
+const treatment = document.getElementById("treatment");
+
+const search = document.getElementById("search");
+const cases = document.getElementById("cases");
+const searchStatus = document.getElementById("searchStatus");
+const toast = document.getElementById("toast");
+const saveBtn = document.getElementById("saveBtn");
+
+// ===============================
+// 🧠 GLOBAL CASES CACHE
+// ===============================
 let CASES_ARRAY = [];
 let CASES_LOADED = false;
+let lastAutoFilledName = null;
 
-/* =========================
-   FIELD LIST (FOR STORAGE)
-========================= */
+// ===============================
+// 📄 FIELD LIST (AUTO SAVE)
+// ===============================
 const fields = [
   "patientName",
   "phone",
@@ -51,79 +68,59 @@ const fields = [
   "treatment",
 ];
 
-/* =========================
-   HELPERS
-========================= */
-function line(label, value) {
-  if (!value || value.trim() === "") return "";
-  return `${label}: ${value}\n`;
-}
-
+// ===============================
+// 🛠 HELPERS
+// ===============================
 function safeLower(val) {
   return val === undefined || val === null ? "" : String(val).toLowerCase();
 }
 
 function normalizeName(val) {
-  return String(val || "")
-    .toLowerCase()
-    .replace(/\s+/g, " ") // collapse multiple spaces
-    .trim();
+  return safeLower(val).replace(/\s+/g, " ").trim();
 }
 
-// patientName.addEventListener("input", async () => {
-//   const name = patientName.value.trim();
-//   if (!name) return;
+function line(label, value) {
+  if (!value || value.trim() === "") return "";
+  return `${label}: ${value}\n`;
+}
 
-//   try {
-//     const res = await fetch(
-//       `${API}?key=${API_KEY}&q=${encodeURIComponent(name)}`
-//     );
-//     const rows = await res.json();
+// function showToast(message, type = "info", duration = 2500) {
+//   toast.innerText = message;
+//   toast.className = `toast show ${type}`;
+//   setTimeout(() => (toast.className = "toast"), duration);
+// }
 
-//     if (!Array.isArray(rows) || !rows.length) return;
+function showToast(message, type = "info", duration = 2500) {
+  if (!toast) return;
 
-//     const r = rows[0]; // latest visit
+  toast.innerText = message;
+  toast.className = `toast show ${type}`;
 
-//     age.value = r.age || "";
-//     gender.value = r.gender || "";
-//     phone.value = r.phone || "";
-//     address.value = r.address || "";
+  setTimeout(() => {
+    toast.className = "toast";
+  }, duration);
+}
 
-//     showToast("Patient details loaded", "info");
-//   } catch (err) {
-//     console.error("Patient auto-fill failed:", err);
-//   }
-// });
+function disablePatientName() {
+  patientName.disabled = true;
+  patientName.classList.add("disabled-field");
+}
 
-patientName.addEventListener("input", () => {
-  if (!CASES_LOADED) return;
+function enablePatientName() {
+  patientName.disabled = false;
+  patientName.classList.remove("disabled-field");
+}
 
-  const name = patientName.value.trim().toLowerCase();
-  if (!name) return;
+function clearPatientInfo() {
+  age.value = "";
+  gender.value = "";
+  phone.value = "";
+  address.value = "";
+}
 
-  // const matches = CASES_ARRAY.filter(
-  //   (r) => (r.name || "").toLowerCase() === name
-  // ).sort((a, b) => new Date(b.lastVisit) - new Date(a.lastVisit));
-
-  const matches = CASES_ARRAY.filter(
-    (r) => normalizeName(r.name) === normalizeName(name)
-  ).sort((a, b) => new Date(b.lastVisit) - new Date(a.lastVisit));
-
-  if (!matches.length) return;
-
-  const r = matches[0]; // latest visit
-
-  age.value = r.age || "";
-  gender.value = r.gender || "";
-  phone.value = r.phone || "";
-  address.value = r.address || "";
-
-  showToast("Patient details loaded", "info");
-});
-
-/* =========================
-   BUILD CASE TEXT
-========================= */
+// ===============================
+// 🧾 BUILD CASE TEXT
+// ===============================
 function buildCaseText() {
   let text = "🩺 CASE TAKING FORM\n\n";
 
@@ -182,23 +179,23 @@ function buildCaseText() {
   return text.trim();
 }
 
-/* =========================
-   COPY FOR CHATGPT
-========================= */
+// ===============================
+// 📋 COPY FOR CHATGPT
+// ===============================
 function copyCase() {
   navigator.clipboard.writeText(buildCaseText());
   showToast("Case copied for ChatGPT", "success");
 }
 
-/* =========================
-   SAVE WITH ACK + AUTO RETRY
-========================= */
+// ===============================
+// 💾 SAVE WITH AUTO RETRY (UNCHANGED)
+// ===============================
 let attempts = 0;
 const MAX_RETRY = 3;
 
 async function postWithRetry(payload) {
   try {
-    const res = await fetch(`${API}?key=${API_KEY}`, {
+    const res = await fetch(`${API}?token=${AUTH_TOKEN}`, {
       method: "POST",
       headers: {
         "Content-Type": "text/plain;charset=utf-8",
@@ -207,26 +204,22 @@ async function postWithRetry(payload) {
     });
 
     const text = await res.text();
-
-    // ✅ ACK from Apps Script
     if (text !== "OK") throw new Error("No ACK");
 
     return true;
-  } catch (err) {
+  } catch {
     attempts++;
-
     if (attempts < MAX_RETRY) {
       await new Promise((r) => setTimeout(r, 1000));
       return postWithRetry(payload);
     }
-
     return false;
   }
 }
 
-/* =========================
-   SAVE CASE
-========================= */
+// ===============================
+// 💾 SAVE CASE
+// ===============================
 async function saveCase() {
   ["patientName", "diagnosis", "treatment"].forEach((id) => {
     document.getElementById(id).classList.remove("error-field");
@@ -274,12 +267,11 @@ async function saveCase() {
       return;
     }
 
-    // 🔄 refresh in-memory array after save
     await loadPatientNames();
     loadSearchNames();
+    clearForm();
 
     showToast("Case saved successfully", "success");
-    clearForm();
   } catch (err) {
     console.error(err);
     showToast("Unexpected save error", "error");
@@ -289,15 +281,116 @@ async function saveCase() {
   }
 }
 
-/* =========================
-   SEARCH OLD CASES
-========================= */
+// ===============================
+// 🔍 LOAD PATIENT NAMES + CACHE
+// ===============================
+async function loadPatientNames() {
+  try {
+    const res = await fetch(`${API}?token=${AUTH_TOKEN}`);
+    const rows = await res.json();
+
+    CASES_ARRAY = Array.isArray(rows) ? rows : [];
+    CASES_LOADED = true;
+
+    const datalist = document.getElementById("patientNames");
+    datalist.innerHTML = "";
+
+    const seen = new Set();
+    CASES_ARRAY.forEach((r) => {
+      const name = safeLower(r.name);
+      if (!name || seen.has(name)) return;
+      seen.add(name);
+
+      const option = document.createElement("option");
+      option.value = r.name;
+      datalist.appendChild(option);
+    });
+  } catch (err) {
+    console.error("Failed to load patient names:", err);
+  }
+}
+
+function loadSearchNames() {
+  if (!CASES_LOADED) return;
+  const datalist = document.getElementById("searchNames");
+  datalist.innerHTML = "";
+
+  const seen = new Set();
+  CASES_ARRAY.forEach((r) => {
+    const name = safeLower(r.name);
+    if (!name || seen.has(name)) return;
+    seen.add(name);
+
+    const option = document.createElement("option");
+    option.value = r.name;
+    datalist.appendChild(option);
+  });
+}
+
+// ===============================
+// 🧠 AUTO-FILL PATIENT INFO
+// ===============================
+patientName.addEventListener("input", () => {
+  if (!CASES_LOADED) return;
+
+  const name = normalizeName(patientName.value);
+
+  // If empty → reset everything
+  if (!name) {
+    clearPatientInfo();
+    lastAutoFilledName = null;
+    return;
+  }
+
+  const matches = CASES_ARRAY.filter(
+    (r) => normalizeName(r.name) === name
+  ).sort((a, b) => new Date(b.lastVisit) - new Date(a.lastVisit));
+
+  // ❌ No exact match → clear stale data
+  if (!matches.length) {
+    if (lastAutoFilledName !== null) {
+      clearPatientInfo();
+      lastAutoFilledName = null;
+    }
+    return;
+  }
+
+  const r = matches[0];
+
+  // ✅ Exact match → fill ONCE
+  if (lastAutoFilledName !== name) {
+    age.value = r.age || "";
+    gender.value = r.gender || "";
+    phone.value = r.phone || "";
+    address.value = r.address || "";
+
+    showToast("Patient details loaded", "info");
+    lastAutoFilledName = name;
+  }
+});
+
+patientName.addEventListener("blur", () => {
+  if (!CASES_LOADED) return;
+
+  const name = normalizeName(patientName.value);
+  if (!name) return;
+
+  const exists = CASES_ARRAY.some((r) => normalizeName(r.name) === name);
+
+  if (exists) {
+    disablePatientName();
+  }
+});
+
+// ===============================
+// 🔎 SEARCH CASES (FULL UI)
+// ===============================
 let searchTimer;
 
 search.onkeyup = () => {
   clearTimeout(searchTimer);
 
-  const q = search.value.trim();
+  const q = normalizeName(search.value);
   if (!q) {
     cases.innerHTML = "";
     searchStatus.innerText = "";
@@ -307,37 +400,34 @@ search.onkeyup = () => {
   searchStatus.innerText = "Searching…";
 
   searchTimer = setTimeout(() => {
-    if (!CASES_LOADED) return;
-
-    // const ql = q.toLowerCase();
-    const ql = normalizeName(q);
-
-    // const rows = CASES_ARRAY.filter((r) => {
-    //   return safeLower(r.name).includes(ql) || safeLower(r.phone).includes(q);
-    // }).sort((a, b) => new Date(b.lastVisit) - new Date(a.lastVisit));
-
     const exact = [];
-    const partial = [];
+    const ends = [];
+    const contains = [];
 
     CASES_ARRAY.forEach((r) => {
-      // const name = safeLower(r.name);
       const name = normalizeName(r.name);
 
-      if (name === ql) {
+      if (name === q) {
         exact.push(r);
-      } else if (name.includes(ql)) {
-        partial.push(r);
+      } else if (name.endsWith(q)) {
+        ends.push(r);
+      } else if (name.includes(q)) {
+        contains.push(r);
       }
     });
 
-    // sort each group by latest visit
-    exact.sort((a, b) => new Date(b.lastVisit) - new Date(a.lastVisit));
-    partial.sort((a, b) => new Date(b.lastVisit) - new Date(a.lastVisit));
+    // Sort each group by latest visit
+    const sortLatest = (a, b) => new Date(b.lastVisit) - new Date(a.lastVisit);
 
-    // exact first, then partial
-    const rows = [...exact, ...partial];
+    exact.sort(sortLatest);
+    ends.sort(sortLatest);
+    contains.sort(sortLatest);
+
+    // Final priority order
+    const rows = [...exact, ...ends, ...contains];
 
     cases.innerHTML = "";
+
     rows.slice(0, 5).forEach((r) => {
       cases.innerHTML += `
 <div class="card">
@@ -365,88 +455,13 @@ search.onkeyup = () => {
   }, 300);
 };
 
-/* =========================
-   LOCAL STORAGE (AUTO SAVE)
-========================= */
-fields.forEach((id) => {
-  const el = document.getElementById(id);
-  if (!el) return;
-
-  el.addEventListener("input", () => {
-    localStorage.setItem("case_" + id, el.value);
-  });
-});
-
-/* =========================
-   RESTORE ON LOAD
-========================= */
-window.addEventListener("load", () => {
-  fields.forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    const saved = localStorage.getItem("case_" + id);
-    if (saved !== null) el.value = saved;
-  });
-});
-
-/* =========================
-   CLEAR FORM
-========================= */
-function clearForm() {
-  fields.forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    el.value = "";
-    localStorage.removeItem("case_" + id);
-  });
-
-  showToast("Form cleared", "info");
-}
-
-function showToast(message, type = "info", duration = 2500) {
-  toast.innerText = message;
-  toast.className = `toast show ${type}`;
-
-  setTimeout(() => {
-    toast.className = "toast";
-  }, duration);
-}
-
-function toggleCase(btn) {
-  const pre = btn.previousElementSibling;
-
-  if (btn.innerText === "Read more") {
-    pre.style.maxHeight = "none";
-    btn.innerText = "Read less";
-  } else {
-    pre.style.maxHeight = "120px";
-    btn.innerText = "Read more";
-  }
-}
-
-function openCase(r) {
-  // Basic patient info
-  patientName.value = r.name || "";
-  age.value = r.age || "";
-  gender.value = r.gender || "";
-  phone.value = r.phone || "";
-  address.value = r.address || "";
-
-  // Clear diagnosis & treatment for NEW visit
-  diagnosis.value = "";
-  treatment.value = "";
-
-  showToast("Patient loaded. Add new visit & save.", "info");
-}
-
+// ===============================
+// 📂 VISIT RENDERING
+// ===============================
 function renderVisits(caseText, diagnosisText, treatmentText) {
   if (!caseText && !diagnosisText && !treatmentText) return "<i>No visits</i>";
 
-  const split = (text) =>
-    (text || "").split(/--- VISIT /).filter((v) => v.trim());
-
+  const split = (t) => (t || "").split(/--- VISIT /).filter((v) => v.trim());
   const casesArr = split(caseText);
   const diagnosesArr = split(diagnosisText);
   const treatmentsArr = split(treatmentText);
@@ -456,25 +471,22 @@ function renderVisits(caseText, diagnosisText, treatmentText) {
     diagnosesArr.length,
     treatmentsArr.length
   );
-
   let html = "";
 
   for (let i = max - 1; i >= 0; i--) {
-    const getBody = (arr) => {
-      if (!arr[i]) return "";
-      return arr[i].split("---").slice(1).join("---").trim();
-    };
+    const getBody = (arr) =>
+      arr[i] ? arr[i].split("---").slice(1).join("---").trim() : "";
 
     const title = (casesArr[i] || diagnosesArr[i] || treatmentsArr[i])
       .split("---")[0]
       .trim();
 
     html += `
-      <div class="visit">
-        <div class="visit-header" onclick="toggleVisit(this)">
-          🗓 ${title} ${i === max - 1 ? "(Latest)" : ""} 
-        </div>
-        <pre class="visit-body ${i === max - 1 ? "open" : ""}">
+<div class="visit">
+  <div class="visit-header" onclick="toggleVisit(this)">
+    🗓 ${title} ${i === max - 1 ? "(Latest)" : ""}
+  </div>
+  <pre class="visit-body ${i === max - 1 ? "open" : ""}">
 <b>Case:</b>
 ${getBody(casesArr)}
 
@@ -483,126 +495,65 @@ ${getBody(diagnosesArr)}
 
 <b>Treatment:</b>
 ${getBody(treatmentsArr)}
-        </pre>
-      </div>
-    `;
+  </pre>
+</div>`;
   }
-
   return html;
 }
 
 function toggleVisit(header) {
-  const body = header.nextElementSibling;
-  body.classList.toggle("open");
+  header.nextElementSibling.classList.toggle("open");
 }
 
-function getLastVisitValue(text) {
-  if (!text) return "";
+// ===============================
+// ➕ OPEN CASE
+// ===============================
+function openCase(r) {
+  patientName.value = r.name || "";
+  age.value = r.age || "";
+  gender.value = r.gender || "";
+  phone.value = r.phone || "";
+  address.value = r.address || "";
 
-  const parts = text.split(/--- VISIT /).filter((v) => v.trim());
-  if (!parts.length) return "";
-
-  const last = parts[parts.length - 1];
-  let body = last.split("---").slice(1).join("---").trim();
-
-  body = body.replace(/^(CASE|DIAGNOSIS|TREATMENT|ADDRESS):\s*/i, "");
-
-  return body.trim();
+  diagnosis.value = "";
+  treatment.value = "";
+  disablePatientName();
+  showToast("Patient loaded. Add new visit & save.", "info");
 }
 
-// async function loadPatientNames() {
-//   try {
-//     const res = await fetch(`${API}?key=${API_KEY}`);
-//     const rows = await res.json();
-//     const datalist = document.getElementById("patientNames");
-//     datalist.innerHTML = "";
-//     rows.forEach((r) => {
-//       const option = document.createElement("option");
-//       option.value = r.name;
-//       datalist.appendChild(option);
-//     });
-//   } catch (err) {
-//     console.error("Failed to load patient names:", err);
-//   }
-// }
-
-async function loadPatientNames() {
-  try {
-    const res = await fetch(`${API}?key=${API_KEY}`);
-    const rows = await res.json();
-
-    // 🔥 STORE FULL DATASET
-    CASES_ARRAY = Array.isArray(rows) ? rows : [];
-    CASES_LOADED = true;
-
-    const datalist = document.getElementById("patientNames");
-    datalist.innerHTML = "";
-
-    // CASES_ARRAY.forEach((r) => {
-    //   if (!r.name) return;
-    //   const option = document.createElement("option");
-    //   option.value = r.name;
-    //   datalist.appendChild(option);
-    // });
-    const seen = new Set();
-
-    CASES_ARRAY.forEach((r) => {
-      const name = safeLower(r.name);
-      if (!name || seen.has(name)) return;
-
-      seen.add(name);
-
-      const option = document.createElement("option");
-      option.value = r.name;
-      datalist.appendChild(option);
-    });
-  } catch (err) {
-    console.error("Failed to load patient names:", err);
-  }
-}
-
-// async function loadSearchNames() {
-//   try {
-//     const res = await fetch(`${API}?key=${API_KEY}`);
-//     const rows = await res.json();
-//     const datalist = document.getElementById("searchNames");
-//     datalist.innerHTML = "";
-//     rows.forEach((r) => {
-//       const option = document.createElement("option");
-//       option.value = r.name;
-//       datalist.appendChild(option);
-//     });
-//   } catch (err) {
-//     console.error("Failed to load search names:", err);
-//   }
-// }
-
-function loadSearchNames() {
-  if (!CASES_LOADED) return;
-
-  const datalist = document.getElementById("searchNames");
-  datalist.innerHTML = "";
-
-  const seen = new Set();
-
-  CASES_ARRAY.forEach((r) => {
-    const name = safeLower(r.name);
-    if (!name || seen.has(name)) return;
-
-    seen.add(name);
-
-    const option = document.createElement("option");
-    option.value = r.name;
-    datalist.appendChild(option);
-  });
-}
-
-// window.addEventListener("load", () => {
-//   loadPatientNames();
-//   loadSearchNames();
-// });
+// ===============================
+// 💾 LOCAL STORAGE (AUTO SAVE)
+// ===============================
+fields.forEach((id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener("input", () =>
+    localStorage.setItem("case_" + id, el.value)
+  );
+});
 
 window.addEventListener("load", async () => {
-  await loadPatientNames(); // fetch + populate array
-  loadSearchNames(); // reuse same array
+  fields.forEach((id) => {
+    const el = document.getElementById(id);
+    const saved = localStorage.getItem("case_" + id);
+    if (el && saved !== null) el.value = saved;
+  });
+
+  await loadPatientNames();
+  loadSearchNames();
 });
+
+// ===============================
+// 🧹 CLEAR FORM
+// ===============================
+function clearForm() {
+  fields.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+    localStorage.removeItem("case_" + id);
+  });
+
+  lastAutoFilledName = null;
+  enablePatientName();
+  showToast("Form cleared", "info");
+}
