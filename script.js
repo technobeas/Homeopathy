@@ -3,7 +3,7 @@
 // ===============================
 // const API = "https://script.google.com/macros/s/AKfycbzdvoH3o05N7Exhwth8GEHbbvuPx1PGWCU-edvAj-Rkm-n0TeCeTkrojE5thS2geH7zIg/exec";
 
-const API = "https://script.google.com/macros/s/AKfycbzqQhOWLV9zK7aBv6mzietSdGaxg-qm2Q9BXHa0ezzZo6WVQcuRh6FufroHd2ceH_NJ1w/exec";
+const API = "https://script.google.com/macros/s/AKfycbzkXfhDfJZMUJxxWdvzbSJKw5IQqBYe8RuwmtrnfpURB2LVI1XRxKtvxTv68FPiSMQC8g/exec";
 
 // MUST match Script Properties → SECRET_TOKEN
 const AUTH_TOKEN = "MY_SECRET_KEY_123";
